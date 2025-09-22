@@ -170,10 +170,10 @@ const WhiteboardKonvaModal: React.FC = () => {
   const [toolActive, setToolActive] = useState<ToolType>(ToolType.Pen);
   const isDrawingRef = useRef(false);
 
+  const activePointerId = useRef<number | null>(null);
+
   const onMouseDown = useCallback(
     (e: any) => {
-      console.log("in");
-
       if (
         !(
           toolActive === ToolType.Pen ||
@@ -233,6 +233,33 @@ const WhiteboardKonvaModal: React.FC = () => {
     isDrawingRef.current = false;
   }, []);
 
+  const onPointerDown = useCallback(
+    (e: any) => {
+      if (!e.evt.isPrimary) return;
+      activePointerId.current = e.evt.pointerId;
+      onMouseDown(e); // ใช้ logic เดิมของคุณ
+    },
+    [onMouseDown]
+  );
+
+  const onPointerMove = useCallback(
+    (e: any) => {
+      if (activePointerId.current == null) return;
+      if (e.evt.pointerId !== activePointerId.current) return;
+      onMouseMove(e); // ใช้ logic เดิมของคุณ
+    },
+    [onMouseMove]
+  );
+
+  const onPointerUp = useCallback(
+    (e: any) => {
+      if (activePointerId.current == null) return;
+      if (e.evt.pointerId !== activePointerId.current) return;
+      activePointerId.current = null;
+      onMouseUp(); // ใช้ logic เดิมของคุณ
+    },
+    [onMouseUp]
+  );
   /* ---- drag image onto canvas (precise) ---- */
   const stageContainerRef = useRef<HTMLDivElement | null>(null);
   const stageRef = useRef<any>(null); // Konva Stage ref
@@ -477,12 +504,9 @@ const WhiteboardKonvaModal: React.FC = () => {
     ref: stageRef,
     width: stageW,
     height: stageH,
-    onMouseDown,
-    onMousemove: onMouseMove,
-    onMouseup: onMouseUp,
-    onTouchStart: onMouseDown,
-    onTouchMove: onMouseMove,
-    onTouchEnd: onMouseUp,
+    onPointerDown: onPointerDown,
+    onPointerMove: onPointerMove,
+    onPointerUp: onPointerUp,
   };
 
   /* ---- render ---- */
